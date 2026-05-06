@@ -38,6 +38,13 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (
+        originalRequest.url.includes("/auth/login") ||
+        originalRequest.url.includes("/auth/refresh")
+      ) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -71,7 +78,20 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         if (typeof window !== "undefined") {
           window.__accessToken__ = null;
-          window.location.href = "/login";
+          // Hanya redirect kalau tidak sedang di auth routes
+          const authRoutes = [
+            "/login",
+            "/register",
+            "/forgot-password",
+            "/reset-password",
+            "/verify-email",
+          ];
+          const isAuthRoute = authRoutes.some((route) =>
+            window.location.pathname.startsWith(route),
+          );
+          if (!isAuthRoute) {
+            window.location.href = "/login";
+          }
         }
         return Promise.reject(refreshError);
       } finally {
