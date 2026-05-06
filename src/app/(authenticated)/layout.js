@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AuthenticatedLayout({ children }) {
-  const { isAuthenticated, isEmailVerified, isLoading } = useAuth();
+  const { isAuthenticated, isEmailVerified, isLoading, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -15,10 +15,14 @@ export default function AuthenticatedLayout({ children }) {
       router.replace("/login");
       return;
     }
+    if (user?.role === "admin") {
+      router.replace("/admin");
+      return;
+    }
     if (!isEmailVerified && pathname !== "/verify-email") {
       router.replace("/verify-email");
     }
-  }, [isLoading, isAuthenticated, isEmailVerified, pathname, router]);
+  }, [isLoading, isAuthenticated, isEmailVerified, user, pathname, router]);
 
   if (isLoading) {
     return (
@@ -29,6 +33,7 @@ export default function AuthenticatedLayout({ children }) {
   }
 
   if (!isAuthenticated) return null;
+  if (user?.role === "admin") return null;
   if (!isEmailVerified && pathname !== "/verify-email") return null;
 
   return <>{children}</>;
