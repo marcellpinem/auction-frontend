@@ -1,3 +1,4 @@
+// src/app/(public)/auctions/layout.js
 import Navbar from "@/components/common/Navbar";
 
 export default function PublicLayout({ children }) {

@@ -19,19 +19,39 @@ import { DURATION_PRESETS, UPLOAD_CONFIG } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
 import api from "@/lib/axios";
 
-export default function AuctionForm({ categories = [] }) {
+export default function AuctionForm({
+  categories = [],
+  initialData = null,
+  mode = "create",
+  auctionId = null,
+}) {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    categoryId: "",
-    startingPrice: "",
-    buyNowPrice: "",
-    durationPreset: "",
+    title: initialData?.title ?? "",
+    description: initialData?.description ?? "",
+    categoryId: initialData?.category?.id ?? "",
+    startingPrice: initialData?.startingPrice
+      ? String(initialData.startingPrice)
+      : "",
+    buyNowPrice: initialData?.buyNowPrice
+      ? String(initialData.buyNowPrice)
+      : "",
+    durationPreset: initialData?.durationPreset ?? "",
   });
 
-  const [images, setImages] = useState([]); // { file, preview, url, uploading, error }
+  // Mode edit: pre-fill images dari existing URLs (sudah di R2, tidak perlu re-upload)
+  const [images, setImages] = useState(
+    initialData?.images
+      ? initialData.images.map((img) => ({
+          file: null,
+          preview: img.url,
+          url: img.url,
+          uploading: false,
+          error: null,
+        }))
+      : [],
+  );
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -203,7 +223,7 @@ export default function AuctionForm({ categories = [] }) {
 
     setSubmitting(true);
     try {
-      await api.post("/auctions", {
+      const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
         categoryId: form.categoryId,
@@ -211,11 +231,17 @@ export default function AuctionForm({ categories = [] }) {
         buyNowPrice: form.buyNowPrice ? Number(form.buyNowPrice) : null,
         durationPreset: form.durationPreset,
         images: images.map((img) => img.url),
-      });
+      };
 
-      router.push("/my-auctions");
+      if (mode === "edit") {
+        await api.put(`/auctions/${auctionId}`, payload);
+        router.push("/my-auctions");
+      } else {
+        await api.post("/auctions", payload);
+        router.push("/my-auctions");
+      }
     } catch (err) {
-      const msg = err.response?.data?.message ?? "Gagal membuat auction.";
+      const msg = err.response?.data?.message ?? "Gagal menyimpan auction.";
       setErrors({ submit: msg });
     } finally {
       setSubmitting(false);
@@ -519,7 +545,13 @@ export default function AuctionForm({ categories = [] }) {
           disabled={submitting}
           className="flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-white"
         >
-          {submitting ? "Mengirim..." : "Submit Auction"}
+          {submitting
+            ? mode === "edit"
+              ? "Menyimpan..."
+              : "Mengirim..."
+            : mode === "edit"
+              ? "Simpan Perubahan"
+              : "Submit Auction"}
         </Button>
       </div>
     </form>
