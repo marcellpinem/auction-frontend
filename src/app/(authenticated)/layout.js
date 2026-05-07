@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import Navbar from "@/components/common/Navbar";
 
 export default function AuthenticatedLayout({ children }) {
   const { isAuthenticated, isEmailVerified, isLoading, user } = useAuth();
@@ -36,5 +37,10 @@ export default function AuthenticatedLayout({ children }) {
   if (user?.role === "admin") return null;
   if (!isEmailVerified && pathname !== "/verify-email") return null;
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1">{children}</main>
+    </div>
+  );
 }
