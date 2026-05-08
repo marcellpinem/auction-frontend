@@ -30,7 +30,7 @@ export default function TopUpModal({ open, onOpenChange, onSuccess }) {
     const num = parseInt(val);
     if (!val || isNaN(num)) return "Nominal wajib diisi";
     if (num < 10000) return "Minimum top up Rp10.000";
-    if (num > 10000000) return "Maximum top up Rp10.000.000";
+    if (num > 1000000000) return "Maximum top up Rp1.000.000.000";
     return "";
   };
 
@@ -101,7 +101,7 @@ export default function TopUpModal({ open, onOpenChange, onSuccess }) {
             </div>
             {error && <p className="text-[12px] text-red-500">{error}</p>}
             <p className="text-[12px] text-stone-400">
-              Min. Rp10.000 — Maks. Rp10.000.000
+              Min. Rp10.000 — Maks. Rp1.000.000.000
             </p>
           </div>
         </div>

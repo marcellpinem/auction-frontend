@@ -1,4 +1,3 @@
-// src/app/(public)/auctions/[id]/page.js
 "use client";
 
 import { useEffect, useState } from "react";
@@ -18,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AuctionImages from "@/components/auction/AuctionImages";
+import BidSection from "@/components/auction/BidSection";
 import BidHistory from "@/components/auction/BidHistory";
 import CountdownTimer from "@/components/common/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
@@ -52,6 +52,7 @@ export default function AuctionDetailPage() {
   const [auction, setAuction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [bidRefreshTrigger, setBidRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (authLoading) return;
@@ -71,6 +72,29 @@ export default function AuctionDetailPage() {
 
     fetchAuction();
   }, [id, authLoading]);
+
+  const handleBidSuccess = (bid) => {
+    setAuction((prev) => ({
+      ...prev,
+      currentPrice: bid.amount,
+      bidIncrement: Math.max(
+        1000,
+        Math.ceil(Math.ceil(bid.amount * 0.02) / 1000) * 1000,
+      ),
+      totalBids: prev.totalBids + 1,
+      isBuyNowActive: false,
+    }));
+    setBidRefreshTrigger((n) => n + 1);
+  };
+
+  const handleBuyNowSuccess = () => {
+    setAuction((prev) => ({
+      ...prev,
+      status: "ended",
+      isBuyNowActive: false,
+    }));
+    setBidRefreshTrigger((n) => n + 1);
+  };
 
   if (loading) {
     return (
@@ -200,7 +224,17 @@ export default function AuctionDetailPage() {
               </div>
             )}
 
-            {/* Buy Now */}
+            {/* Buy Now price info (non-active) */}
+            {!auction.isBuyNowActive &&
+              auction.buyNowPrice &&
+              auction.status === "active" && (
+                <div className="flex items-center gap-1.5 text-xs text-stone-400 pt-1 border-t border-stone-100 dark:border-stone-700">
+                  <ShoppingBag className="w-3 h-3" />
+                  Buy Now tidak tersedia setelah ada bid masuk
+                </div>
+              )}
+
+            {/* Buy Now price (active) */}
             {auction.isBuyNowActive && auction.buyNowPrice && (
               <div className="flex items-center justify-between pt-1 border-t border-stone-100 dark:border-stone-700">
                 <div className="flex items-center gap-1.5 text-sm">
@@ -216,7 +250,7 @@ export default function AuctionDetailPage() {
             )}
           </div>
 
-          {/* Countdown / Status info */}
+          {/* Countdown */}
           {auction.status === "active" && auction.endsAt && (
             <div className="flex items-center gap-2 text-sm">
               <Clock className="w-4 h-4 text-amber-500 shrink-0" />
@@ -263,7 +297,7 @@ export default function AuctionDetailPage() {
             </div>
           )}
 
-          {/* Bid Section placeholder / seller label */}
+          {/* Bid Section */}
           {auction.status === "active" && (
             <div className="rounded-lg border border-stone-200 dark:border-stone-700 p-4">
               {isSeller ? (
@@ -272,10 +306,11 @@ export default function AuctionDetailPage() {
                   <span>Kamu adalah seller dari auction ini.</span>
                 </div>
               ) : (
-                <div className="text-sm text-stone-400 text-center py-2">
-                  {/* BidSection akan diisi di Room 7 */}
-                  Fitur bidding tersedia di Room 7.
-                </div>
+                <BidSection
+                  auction={auction}
+                  onBidSuccess={handleBidSuccess}
+                  onBuyNowSuccess={handleBuyNowSuccess}
+                />
               )}
             </div>
           )}
@@ -300,13 +335,16 @@ export default function AuctionDetailPage() {
         </p>
       </div>
 
-      {/* Bid History — akan diisi di Room 7 */}
+      {/* Bid History */}
       {auction.status !== "pending" && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
             Riwayat Bid
           </h2>
-          <BidHistory auctionId={auction.id} />
+          <BidHistory
+            auctionId={auction.id}
+            refreshTrigger={bidRefreshTrigger}
+          />
         </div>
       )}
     </div>

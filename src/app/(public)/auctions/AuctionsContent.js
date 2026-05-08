@@ -1,4 +1,3 @@
-// src/app/(public)/auctions/AuctionsContent.js
 "use client";
 
 import { useState, useEffect } from "react";
