@@ -1,6 +1,7 @@
+// auction-frontend/src/app/(public)/auctions/[id]/page.js
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -21,6 +22,7 @@ import BidSection from "@/components/auction/BidSection";
 import BidHistory from "@/components/auction/BidHistory";
 import CountdownTimer from "@/components/common/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import api from "@/lib/axios";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -48,11 +50,14 @@ export default function AuctionDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { subscribe, joinAuction, leaveAuction } = useWebSocket();
 
   const [auction, setAuction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [bidRefreshTrigger, setBidRefreshTrigger] = useState(0);
+  const [newBid, setNewBid] = useState(null);
+  const [viewerCount, setViewerCount] = useState(0);
+  const [winner, setWinner] = useState(null); // { username, finalPrice }
 
   useEffect(() => {
     if (authLoading) return;
@@ -73,28 +78,121 @@ export default function AuctionDetailPage() {
     fetchAuction();
   }, [id, authLoading]);
 
-  const handleBidSuccess = (bid) => {
-    setAuction((prev) => ({
-      ...prev,
-      currentPrice: bid.amount,
-      bidIncrement: Math.max(
-        1000,
-        Math.ceil(Math.ceil(bid.amount * 0.02) / 1000) * 1000,
-      ),
-      totalBids: prev.totalBids + 1,
-      isBuyNowActive: false,
-    }));
-    setBidRefreshTrigger((n) => n + 1);
-  };
+  // Join/leave WebSocket room saat auction loaded
+  useEffect(() => {
+    if (!auction?.id) return;
 
-  const handleBuyNowSuccess = () => {
-    setAuction((prev) => ({
-      ...prev,
-      status: "ended",
-      isBuyNowActive: false,
-    }));
-    setBidRefreshTrigger((n) => n + 1);
-  };
+    // Tunggu sebentar agar WebSocket sempat connect sebelum join
+    const timer = setTimeout(() => {
+      joinAuction(auction.id);
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      leaveAuction(auction.id);
+    };
+  }, [auction?.id, joinAuction, leaveAuction]);
+
+  // Subscribe WebSocket events
+  useEffect(() => {
+    if (!auction?.id) return;
+
+    const unsubs = [];
+
+    // bid_updated — update harga, increment, endsAt
+    unsubs.push(
+      subscribe(
+        "bid_updated",
+        ({ highestBid, highestBidder, bidIncrement, endsAt, extendCount }) => {
+          setAuction((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              currentPrice: highestBid,
+              bidIncrement,
+              endsAt,
+              extendCount,
+              isBuyNowActive: false,
+              totalBids: prev.totalBids + 1,
+            };
+          });
+          setNewBid({
+            id: `temp-${Date.now()}`,
+            amount: highestBid,
+            isWinning: true,
+            createdAt: new Date().toISOString(),
+            bidder: { username: highestBidder, avatarUrl: null },
+          });
+        },
+      ),
+    );
+
+    // auction_extended — update endsAt dan extendCount
+    unsubs.push(
+      subscribe("auction_extended", ({ endsAt, extendCount }) => {
+        setAuction((prev) => {
+          if (!prev) return prev;
+          return { ...prev, endsAt, extendCount };
+        });
+      }),
+    );
+
+    // auction_ended — set status ended, simpan info pemenang
+    unsubs.push(
+      subscribe("auction_ended", ({ winnerId, winnerUsername, finalPrice }) => {
+        setAuction((prev) => {
+          if (!prev) return prev;
+          return { ...prev, status: "ended", isBuyNowActive: false };
+        });
+        setWinner({ username: winnerUsername, finalPrice });
+        setBidRefreshTrigger((n) => n + 1);
+      }),
+    );
+
+    // buy_now_triggered — tampilkan info sebelum auction_ended broadcast
+    unsubs.push(
+      subscribe("buy_now_triggered", ({ buyerUsername, price }) => {
+        setAuction((prev) => {
+          if (!prev) return prev;
+          return { ...prev, isBuyNowActive: false };
+        });
+      }),
+    );
+
+    // viewer_count — update jumlah viewer realtime
+    unsubs.push(
+      subscribe("viewer_count", ({ count }) => {
+        setViewerCount(count);
+      }),
+    );
+
+    return () => unsubs.forEach((fn) => fn());
+  }, [auction?.id, subscribe]);
+
+  const handleBidSuccess = useCallback((bid) => {
+    // Optimistic update — akan di-override oleh bid_updated WebSocket event
+    setAuction((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        currentPrice: bid.amount,
+        bidIncrement: Math.max(
+          1000,
+          Math.ceil(Math.ceil(bid.amount * 0.02) / 1000) * 1000,
+        ),
+        totalBids: prev.totalBids + 1,
+        isBuyNowActive: false,
+      };
+    });
+  }, []);
+
+  const handleBuyNowSuccess = useCallback(() => {
+    // Optimistic update — akan di-override oleh auction_ended WebSocket event
+    setAuction((prev) => {
+      if (!prev) return prev;
+      return { ...prev, status: "ended", isBuyNowActive: false };
+    });
+  }, []);
 
   if (loading) {
     return (
@@ -166,7 +264,7 @@ export default function AuctionDetailPage() {
 
         {/* Kanan — Info */}
         <div className="space-y-5">
-          {/* Status + Category */}
+          {/* Status + Category + Viewer count */}
           <div className="flex items-center gap-2 flex-wrap">
             <Badge className={`${statusConfig.class} border-0 font-medium`}>
               {statusConfig.label}
@@ -178,6 +276,12 @@ export default function AuctionDetailPage() {
               <Tag className="w-3 h-3 mr-1" />
               {auction.category.name}
             </Badge>
+            {auction.status === "active" && viewerCount > 0 && (
+              <span className="flex items-center gap-1 text-xs text-stone-400 ml-auto">
+                <Eye className="w-3 h-3" />
+                {viewerCount} melihat
+              </span>
+            )}
           </div>
 
           {/* Title */}
@@ -262,7 +366,25 @@ export default function AuctionDetailPage() {
             </div>
           )}
 
-          {auction.status === "ended" && (
+          {/* Winner banner */}
+          {auction.status === "ended" && winner && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Auction selesai!</p>
+                <p className="mt-0.5">
+                  Dimenangkan oleh{" "}
+                  <span className="font-semibold">{winner.username}</span>{" "}
+                  dengan{" "}
+                  <span className="font-semibold">
+                    {formatCurrency(winner.finalPrice)}
+                  </span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {auction.status === "ended" && !winner && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-sm">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               Auction ini telah berakhir pada {formatDate(auction.endsAt)}.
@@ -341,10 +463,7 @@ export default function AuctionDetailPage() {
           <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
             Riwayat Bid
           </h2>
-          <BidHistory
-            auctionId={auction.id}
-            refreshTrigger={bidRefreshTrigger}
-          />
+          <BidHistory auctionId={auction.id} newBid={newBid} />
         </div>
       )}
     </div>

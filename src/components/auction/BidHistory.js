@@ -1,3 +1,4 @@
+// auction-frontend/src/components/auction/BidHistory.js
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -5,13 +6,16 @@ import { TrendingUp, Crown, Loader2 } from "lucide-react";
 import api from "@/lib/axios";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-export default function BidHistory({ auctionId, refreshTrigger = 0 }) {
+export default function BidHistory({ auctionId, newBid = null }) {
   const [bids, setBids] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [animatingId, setAnimatingId] = useState(null);
+  const initialLoadDone = useRef(false);
 
+  // Initial fetch
   useEffect(() => {
     let cancelled = false;
 
@@ -26,6 +30,7 @@ export default function BidHistory({ auctionId, refreshTrigger = 0 }) {
           setPagination(data.data.pagination);
           setPage(1);
           setLoading(false);
+          initialLoadDone.current = true;
         }
       } catch {
         if (!cancelled) setLoading(false);
@@ -36,7 +41,26 @@ export default function BidHistory({ auctionId, refreshTrigger = 0 }) {
     return () => {
       cancelled = true;
     };
-  }, [auctionId, refreshTrigger]);
+  }, [auctionId]);
+
+  // Prepend bid baru saat newBid berubah — tanpa refetch
+  useEffect(() => {
+    if (!newBid || !initialLoadDone.current) return;
+
+    setBids((prev) => {
+      // Set semua bid lama jadi isWinning false
+      const updated = prev.map((b) => ({ ...b, isWinning: false }));
+      // Prepend bid baru di atas
+      return [newBid, ...updated];
+    });
+
+    setPagination((prev) => (prev ? { ...prev, total: prev.total + 1 } : prev));
+
+    // Trigger animasi fade-in untuk bid baru
+    setAnimatingId(newBid.id);
+    const timer = setTimeout(() => setAnimatingId(null), 600);
+    return () => clearTimeout(timer);
+  }, [newBid]);
 
   const handleLoadMore = async () => {
     const nextPage = page + 1;
@@ -77,11 +101,20 @@ export default function BidHistory({ auctionId, refreshTrigger = 0 }) {
         {bids.map((bid, index) => (
           <div
             key={bid.id}
-            className={`flex items-center justify-between px-4 py-3 ${
+            className={`flex items-center justify-between px-4 py-3 transition-all duration-300 ${
+              animatingId === bid.id
+                ? "opacity-0 -translate-y-1"
+                : "opacity-100 translate-y-0"
+            } ${
               bid.isWinning
                 ? "bg-amber-50 dark:bg-amber-900/10"
                 : "bg-white dark:bg-stone-900"
             }`}
+            style={
+              animatingId === bid.id
+                ? { animation: "fadeSlideIn 0.3s ease forwards" }
+                : {}
+            }
           >
             <div className="flex items-center gap-3">
               <span className="text-xs text-stone-400 w-5 text-center font-mono">
@@ -140,6 +173,13 @@ export default function BidHistory({ auctionId, refreshTrigger = 0 }) {
           </button>
         </div>
       )}
+
+      <style>{`
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

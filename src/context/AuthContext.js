@@ -1,3 +1,4 @@
+// auction-frontend/src/context/AuthContext.js
 "use client";
 
 import {

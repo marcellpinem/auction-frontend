@@ -1,3 +1,4 @@
+// auction-frontend/src/components/auction/BidSection.js
 "use client";
 
 import { useState } from "react";
