@@ -1,9 +1,8 @@
-// src/components/common/Navbar.js
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Gavel,
   Menu,
@@ -18,6 +17,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useNotification } from "@/context/NotificationContext";
 import { toast } from "sonner";
 
 const NAV_LINKS = [{ label: "Browse Auction", href: "/auctions" }];
@@ -34,8 +34,15 @@ const AUTH_NAV = [
 export default function Navbar() {
   const pathname = usePathname();
   const { isAuthenticated, user, logout } = useAuth();
+  const { unreadCount, fetchUnreadCount } = useNotification();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+    }
+  }, [isAuthenticated, fetchUnreadCount]);
 
   const handleLogout = async () => {
     await logout();
@@ -82,6 +89,11 @@ export default function Navbar() {
                   className="relative p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
                 >
                   <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 min-w-4 h-4 px-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
 
                 {/* User menu */}

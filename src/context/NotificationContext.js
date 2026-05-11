@@ -1,12 +1,27 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import api from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
+
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+
+// Referensi ke singleton WebSocket dari useWebSocket
+// Kita tidak import useWebSocket (hook) karena context bukan component.
+// Sebaliknya, kita listen langsung ke globalListeners via custom event browser.
+// Cara yang lebih clean: expose subscribe via window event.
 
 const NotificationContext = createContext(null);
 
 export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
+  const { isAuthenticated } = useAuth();
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -24,6 +39,19 @@ export const NotificationProvider = ({ children }) => {
   const resetUnread = useCallback(() => {
     setUnreadCount(0);
   }, []);
+
+  // Listen ke custom browser event yang di-dispatch oleh useWebSocket
+  // saat menerima event "notification" dari server
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handler = () => {
+      setUnreadCount((prev) => prev + 1);
+    };
+
+    window.addEventListener("ws:notification", handler);
+    return () => window.removeEventListener("ws:notification", handler);
+  }, [isAuthenticated]);
 
   return (
     <NotificationContext.Provider
