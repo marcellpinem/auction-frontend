@@ -3,12 +3,16 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function Pagination({ page, totalPages }) {
+export default function Pagination({ page, totalPages, onPageChange }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const goToPage = (p) => {
+    if (onPageChange) {
+      onPageChange(p);
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", p);
     router.push(`${pathname}?${params.toString()}`);
@@ -31,7 +35,6 @@ export default function Pagination({ page, totalPages }) {
 
   return (
     <div className="flex items-center justify-center gap-1">
-      {/* Prev */}
       <button
         onClick={() => goToPage(page - 1)}
         disabled={page === 1}
@@ -40,7 +43,6 @@ export default function Pagination({ page, totalPages }) {
         <ChevronLeft className="w-4 h-4" />
       </button>
 
-      {/* Pages */}
       {getPages().map((p, i) =>
         p === "..." ? (
           <span
@@ -64,7 +66,6 @@ export default function Pagination({ page, totalPages }) {
         ),
       )}
 
-      {/* Next */}
       <button
         onClick={() => goToPage(page + 1)}
         disabled={page === totalPages}
