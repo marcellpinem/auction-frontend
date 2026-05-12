@@ -14,6 +14,7 @@ import {
   Eye,
   AlertCircle,
   CheckCircle2,
+  Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +58,8 @@ export default function AuctionDetailPage() {
   const [error, setError] = useState(null);
   const [newBid, setNewBid] = useState(null);
   const [viewerCount, setViewerCount] = useState(0);
-  const [winner, setWinner] = useState(null); // { username, finalPrice }
+  const [winner, setWinner] = useState(null);
+  const [watching, setWatching] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -75,14 +77,24 @@ export default function AuctionDetailPage() {
       }
     };
 
+    const fetchWatchStatus = async () => {
+      if (!user) return;
+      try {
+        const { data } = await api.get(`/auctions/${id}/watch`);
+        setWatching(data.data.watching);
+      } catch {
+        // silent fail
+      }
+    };
+
     fetchAuction();
-  }, [id, authLoading]);
+    fetchWatchStatus();
+  }, [id, authLoading, user]);
 
   // Join/leave WebSocket room saat auction loaded
   useEffect(() => {
     if (!auction?.id) return;
 
-    // Tunggu sebentar agar WebSocket sempat connect sebelum join
     const timer = setTimeout(() => {
       joinAuction(auction.id);
     }, 500);
@@ -99,7 +111,6 @@ export default function AuctionDetailPage() {
 
     const unsubs = [];
 
-    // bid_updated — update harga, increment, endsAt
     unsubs.push(
       subscribe(
         "bid_updated",
@@ -127,7 +138,6 @@ export default function AuctionDetailPage() {
       ),
     );
 
-    // auction_extended — update endsAt dan extendCount
     unsubs.push(
       subscribe("auction_extended", ({ endsAt, extendCount }) => {
         setAuction((prev) => {
@@ -137,7 +147,6 @@ export default function AuctionDetailPage() {
       }),
     );
 
-    // auction_ended — set status ended, simpan info pemenang
     unsubs.push(
       subscribe("auction_ended", ({ winnerId, winnerUsername, finalPrice }) => {
         setAuction((prev) => {
@@ -145,13 +154,11 @@ export default function AuctionDetailPage() {
           return { ...prev, status: "ended", isBuyNowActive: false };
         });
         setWinner({ username: winnerUsername, finalPrice });
-        setBidRefreshTrigger((n) => n + 1);
       }),
     );
 
-    // buy_now_triggered — tampilkan info sebelum auction_ended broadcast
     unsubs.push(
-      subscribe("buy_now_triggered", ({ buyerUsername, price }) => {
+      subscribe("buy_now_triggered", () => {
         setAuction((prev) => {
           if (!prev) return prev;
           return { ...prev, isBuyNowActive: false };
@@ -159,7 +166,6 @@ export default function AuctionDetailPage() {
       }),
     );
 
-    // viewer_count — update jumlah viewer realtime
     unsubs.push(
       subscribe("viewer_count", ({ count }) => {
         setViewerCount(count);
@@ -170,7 +176,6 @@ export default function AuctionDetailPage() {
   }, [auction?.id, subscribe]);
 
   const handleBidSuccess = useCallback((bid) => {
-    // Optimistic update — akan di-override oleh bid_updated WebSocket event
     setAuction((prev) => {
       if (!prev) return prev;
       return {
@@ -187,12 +192,21 @@ export default function AuctionDetailPage() {
   }, []);
 
   const handleBuyNowSuccess = useCallback(() => {
-    // Optimistic update — akan di-override oleh auction_ended WebSocket event
     setAuction((prev) => {
       if (!prev) return prev;
       return { ...prev, status: "ended", isBuyNowActive: false };
     });
   }, []);
+
+  const handleToggleWatch = async () => {
+    if (!user) return;
+    try {
+      const { data } = await api.post(`/auctions/${id}/watch`);
+      setWatching(data.data.watching);
+    } catch (err) {
+      console.error("Failed to toggle watchlist:", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -264,7 +278,7 @@ export default function AuctionDetailPage() {
 
         {/* Kanan — Info */}
         <div className="space-y-5">
-          {/* Status + Category + Viewer count */}
+          {/* Status + Category + Viewer count + Watchlist */}
           <div className="flex items-center gap-2 flex-wrap">
             <Badge className={`${statusConfig.class} border-0 font-medium`}>
               {statusConfig.label}
@@ -276,12 +290,29 @@ export default function AuctionDetailPage() {
               <Tag className="w-3 h-3 mr-1" />
               {auction.category.name}
             </Badge>
-            {auction.status === "active" && viewerCount > 0 && (
-              <span className="flex items-center gap-1 text-xs text-stone-400 ml-auto">
-                <Eye className="w-3 h-3" />
-                {viewerCount} melihat
-              </span>
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              {auction.status === "active" && viewerCount > 0 && (
+                <span className="flex items-center gap-1 text-xs text-stone-400">
+                  <Eye className="w-3 h-3" />
+                  {viewerCount} melihat
+                </span>
+              )}
+              {user && !isSeller && (
+                <button
+                  onClick={handleToggleWatch}
+                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                    watching
+                      ? "border-amber-300 bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-400"
+                      : "border-stone-200 text-stone-400 hover:border-amber-300 hover:text-amber-500 dark:border-stone-700"
+                  }`}
+                >
+                  <Bookmark
+                    className={`w-3.5 h-3.5 ${watching ? "fill-amber-500 text-amber-500" : ""}`}
+                  />
+                  {watching ? "Dipantau" : "Pantau"}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Title */}
