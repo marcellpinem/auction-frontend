@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const getTimeLeft = (endsAt) => {
   const diff = new Date(endsAt) - new Date();
+
   if (diff <= 0) return null;
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -25,57 +26,160 @@ export default function CountdownTimer({ endsAt, compact = false }) {
     return () => clearInterval(interval);
   }, [endsAt]);
 
-  if (!timeLeft) return <span>Berakhir</span>;
-
-  const { days, hours, minutes, seconds, diff } = timeLeft;
-  const isUrgent = diff < 60 * 60 * 1000;
-
-  if (compact) {
-    if (days > 0)
-      return (
-        <span>
-          {days}h {hours}j lagi
-        </span>
-      );
-    if (hours > 0)
-      return (
-        <span className={isUrgent ? "text-red-500 font-medium" : ""}>
-          {hours}j {minutes}m lagi
-        </span>
-      );
+  if (!timeLeft) {
     return (
-      <span className="text-red-500 font-medium">
-        {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}{" "}
-        lagi
+      <span className="inline-flex items-center rounded-full border border-[#ececec] bg-[#fafafa] px-2.5 py-1 text-[11px] font-medium text-[#737373]">
+        Berakhir
       </span>
     );
   }
 
+  const { days, hours, minutes, seconds, diff } = timeLeft;
+
+  const isUrgent = diff < 60 * 60 * 1000;
+
+  if (compact) {
+    if (days > 0) {
+      return <CompactBadge value={`${days}h ${hours}j`} urgent={false} />;
+    }
+
+    if (hours > 0) {
+      return <CompactBadge value={`${hours}j ${minutes}m`} urgent={isUrgent} />;
+    }
+
+    return (
+      <CompactBadge
+        value={`${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+          2,
+          "0",
+        )}`}
+        urgent
+      />
+    );
+  }
+
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="
+        flex
+        flex-wrap
+        items-center
+        gap-2
+      "
+    >
       {days > 0 && <TimeUnit value={days} label="Hari" urgent={false} />}
+
       <TimeUnit value={hours} label="Jam" urgent={isUrgent} />
+
       <TimeUnit value={minutes} label="Menit" urgent={isUrgent} />
+
       <TimeUnit value={seconds} label="Detik" urgent={isUrgent} />
     </div>
+  );
+}
+
+function CompactBadge({ value, urgent }) {
+  return (
+    <span
+      className={`
+        inline-flex
+        items-center
+        rounded-full
+        border
+        px-2.5
+        py-1
+        text-[11px]
+        font-semibold
+        tracking-[0.2px]
+
+        ${
+          urgent
+            ? `
+              border-red-200
+              bg-red-50
+              text-red-600
+            `
+            : `
+              border-[#e7e7e7]
+              bg-[#fafafa]
+              text-[#525252]
+            `
+        }
+      `}
+    >
+      {value} lagi
+    </span>
   );
 }
 
 function TimeUnit({ value, label, urgent }) {
   return (
     <div
-      className={`flex flex-col items-center min-w-10 px-2 py-1 rounded bg-stone-100 dark:bg-stone-800 ${urgent ? "bg-red-50 dark:bg-red-950" : ""}`}
+      className={`
+        relative
+        overflow-hidden
+        rounded-2xl
+        border
+        px-3
+        py-2
+        text-center
+        min-w-[72px]
+
+        ${
+          urgent
+            ? `
+              border-red-200
+              bg-red-50
+            `
+            : `
+              border-[#ececec]
+              bg-white
+            `
+        }
+      `}
     >
-      <span
-        className={`text-lg font-bold font-mono leading-none ${urgent ? "text-red-500" : "text-stone-800 dark:text-stone-100"}`}
-      >
-        {String(value).padStart(2, "0")}
-      </span>
-      <span
-        className={`text-[10px] mt-0.5 ${urgent ? "text-red-400" : "text-stone-400 dark:text-stone-500"}`}
-      >
-        {label}
-      </span>
+      {/* GLOW */}
+      {urgent && (
+        <div
+          className="
+            absolute
+            inset-0
+            bg-[rgba(239,68,68,0.06)]
+          "
+        />
+      )}
+
+      <div className="relative z-10">
+        <span
+          className={`
+            block
+            text-[24px]
+            font-semibold
+            leading-none
+            tracking-[-1px]
+            tabular-nums
+
+            ${urgent ? "text-red-600" : "text-[#1a1a1a]"}
+          `}
+        >
+          {String(value).padStart(2, "0")}
+        </span>
+
+        <span
+          className={`
+            mt-1
+            block
+            text-[10px]
+            font-medium
+            uppercase
+            tracking-[0.6px]
+
+            ${urgent ? "text-red-400" : "text-[#8a8a8a]"}
+          `}
+        >
+          {label}
+        </span>
+      </div>
     </div>
   );
 }

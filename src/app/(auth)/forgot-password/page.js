@@ -1,18 +1,26 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
+
+import { ArrowLeft, Loader2, LockKeyhole, MailCheck } from "lucide-react";
+
 import api from "@/lib/axios";
+
 import { useForm } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { z } from "zod";
 
 const schema = z.object({
-  email: z.string().email("Format email tidak valid"),
+  email: z.string().email("Invalid email format"),
 });
 
 export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
+
   const [submittedEmail, setSubmittedEmail] = useState("");
 
   const {
@@ -20,102 +28,362 @@ export default function ForgotPasswordPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(schema) });
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
 
   const onSubmit = async ({ email }) => {
     try {
-      await api.post("/auth/forgot-password", { email });
+      await api.post("/auth/forgot-password", {
+        email,
+      });
+
       setSubmittedEmail(email);
+
       setSubmitted(true);
     } catch (err) {
       setError("root", {
-        message: err.response?.data?.message || "Terjadi kesalahan. Coba lagi.",
+        message:
+          err.response?.data?.message ||
+          "Something went wrong. Please try again.",
       });
     }
   };
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-md bg-white border border-stone-200 rounded-lg p-8 text-center">
-          <div className="w-12 h-12 bg-green-50 border border-green-100 rounded-lg flex items-center justify-center mx-auto mb-6">
-            <i className="bx bx-mail-send text-green-600 text-2xl" />
-          </div>
-          <h1 className="text-xl font-bold text-stone-900 mb-2">
-            Cek Email Kamu
-          </h1>
-          <p className="text-stone-500 text-[15px] mb-1">
-            Link reset password sudah dikirim ke
-          </p>
-          <p className="text-stone-700 font-medium text-[15px] mb-6">
-            {submittedEmail}
-          </p>
-          <p className="text-stone-400 text-sm mb-6">
-            Link berlaku selama 1 jam. Cek folder spam jika tidak ada di inbox.
-          </p>
-          <Link
-            href="/login"
-            className="text-amber-500 hover:text-amber-600 text-[15px] font-medium transition-colors"
+      <div
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#f7f7f7]
+          px-4
+          py-10
+        "
+      >
+        <div
+          className="
+            w-full
+            max-w-[460px]
+            overflow-hidden
+            rounded-[28px]
+            border
+            border-[#e8e8e8]
+            bg-white
+            shadow-[0_20px_60px_rgba(0,0,0,0.06)]
+          "
+        >
+          {/* TOP */}
+          <div
+            className="
+              border-b
+              border-[#e8e8e8]
+              bg-[radial-gradient(circle_at_top_right,rgba(2,74,216,0.06),transparent_45%)]
+              px-8
+              py-8
+            "
           >
-            Kembali ke Login
-          </Link>
+            <div
+              className="
+                flex
+                h-14
+                w-14
+                items-center
+                justify-center
+                rounded-2xl
+                bg-[#edf3ff]
+              "
+            >
+              <MailCheck className="h-6 w-6 text-[#024ad8]" />
+            </div>
+
+            <h1
+              className="
+                mt-6
+                text-[32px]
+                font-semibold
+                tracking-[-1px]
+                text-[#1a1a1a]
+              "
+            >
+              Check Your Email
+            </h1>
+
+            <p
+              className="
+                mt-3
+                text-[15px]
+                leading-7
+                text-[#636363]
+              "
+            >
+              We sent a password reset link to:
+            </p>
+
+            <p
+              className="
+                mt-2
+                break-all
+                text-[15px]
+                font-semibold
+                text-[#1a1a1a]
+              "
+            >
+              {submittedEmail}
+            </p>
+          </div>
+
+          {/* CONTENT */}
+          <div className="px-8 py-8">
+            <div
+              className="
+                rounded-2xl
+                border
+                border-[#e8e8e8]
+                bg-[#fafafa]
+                p-5
+              "
+            >
+              <p
+                className="
+                  text-[14px]
+                  leading-7
+                  text-[#636363]
+                "
+              >
+                The reset link will expire in 1 hour. If you don’t see the
+                email, check your spam or junk folder.
+              </p>
+            </div>
+
+            <Link
+              href="/login"
+              className="
+                mt-6
+                inline-flex
+                items-center
+                gap-2
+                text-[14px]
+                font-medium
+                text-[#024ad8]
+              "
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to login
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white border border-stone-200 rounded-lg p-8">
-        <div className="w-12 h-12 bg-amber-50 border border-amber-100 rounded-lg flex items-center justify-center mb-6">
-          <i className="bx bx-lock-open text-amber-500 text-2xl" />
-        </div>
-
-        <h1 className="text-xl font-bold text-stone-900 mb-2">Lupa Password</h1>
-        <p className="text-stone-500 text-[15px] mb-6">
-          Masukkan email kamu dan kami akan kirim link untuk reset password.
-        </p>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="email@contoh.com"
-              {...register("email")}
-              className="w-full border border-stone-200 rounded-lg px-3 py-2.5 text-[15px] text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
+    <div
+      className="
+        flex
+        min-h-screen
+        items-center
+        justify-center
+        bg-[#f7f7f7]
+        px-4
+        py-10
+      "
+    >
+      <div
+        className="
+          w-full
+          max-w-[460px]
+          overflow-hidden
+          rounded-[28px]
+          border
+          border-[#e8e8e8]
+          bg-white
+          shadow-[0_20px_60px_rgba(0,0,0,0.06)]
+        "
+      >
+        {/* HEADER */}
+        <div
+          className="
+            border-b
+            border-[#e8e8e8]
+            bg-[radial-gradient(circle_at_top_right,rgba(2,74,216,0.06),transparent_45%)]
+            px-8
+            py-8
+          "
+        >
+          <div
+            className="
+              flex
+              h-14
+              w-14
+              items-center
+              justify-center
+              rounded-2xl
+              bg-[#edf3ff]
+            "
+          >
+            <LockKeyhole className="h-6 w-6 text-[#024ad8]" />
           </div>
 
-          {errors.root && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-              <p className="text-red-700 text-sm">{errors.root.message}</p>
+          <h1
+            className="
+              mt-6
+              text-[32px]
+              font-semibold
+              tracking-[-1px]
+              text-[#1a1a1a]
+            "
+          >
+            Forgot Password
+          </h1>
+
+          <p
+            className="
+              mt-3
+              max-w-md
+              text-[15px]
+              leading-7
+              text-[#636363]
+            "
+          >
+            Enter your account email and we’ll send a secure password reset
+            link.
+          </p>
+        </div>
+
+        {/* FORM */}
+        <div className="px-8 py-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* EMAIL */}
+            <div>
+              <label
+                className="
+                  mb-2
+                  block
+                  text-[13px]
+                  font-semibold
+                  uppercase
+                  tracking-[0.5px]
+                  text-[#4a4a4a]
+                "
+              >
+                Email Address
+              </label>
+
+              <input
+                type="email"
+                placeholder="email@example.com"
+                {...register("email")}
+                className="
+                  h-12
+                  w-full
+                  rounded-[4px]
+                  border
+                  border-[#cfcfcf]
+                  bg-white
+                  px-4
+                  text-[15px]
+                  text-[#1a1a1a]
+                  outline-none
+                  transition-colors
+
+                  placeholder:text-[#8a8a8a]
+
+                  focus:border-[#1a1a1a]
+                "
+              />
+
+              {errors.email && (
+                <p
+                  className="
+                    mt-2
+                    text-[13px]
+                    text-[#dc2626]
+                  "
+                >
+                  {errors.email.message}
+                </p>
+              )}
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-stone-100 disabled:text-stone-400 text-white font-medium text-[15px] py-2.5 rounded-lg transition-colors"
-          >
-            {isSubmitting ? "Mengirim..." : "Kirim Link Reset"}
-          </button>
-        </form>
+            {/* ERROR */}
+            {errors.root && (
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-[#fecaca]
+                  bg-[#fff5f5]
+                  px-4
+                  py-3
+                "
+              >
+                <p
+                  className="
+                    text-[13px]
+                    leading-6
+                    text-[#b42318]
+                  "
+                >
+                  {errors.root.message}
+                </p>
+              </div>
+            )}
 
-        <div className="mt-6 text-center">
-          <Link
-            href="/login"
-            className="text-stone-500 hover:text-stone-700 text-[15px] transition-colors"
-          >
-            ← Kembali ke Login
-          </Link>
+            {/* SUBMIT */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                flex
+                h-12
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-[4px]
+                bg-[#024ad8]
+                text-[14px]
+                font-semibold
+                uppercase
+                tracking-[0.7px]
+                text-white
+                transition-opacity
+
+                hover:opacity-90
+
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              "
+            >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+
+              {isSubmitting ? "Sending..." : "Send Reset Link"}
+            </button>
+          </form>
+
+          {/* FOOTER */}
+          <div className="mt-8">
+            <Link
+              href="/login"
+              className="
+                inline-flex
+                items-center
+                gap-2
+                text-[14px]
+                font-medium
+                text-[#636363]
+                transition-colors
+
+                hover:text-[#1a1a1a]
+              "
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to login
+            </Link>
+          </div>
         </div>
       </div>
     </div>

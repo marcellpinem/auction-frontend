@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+
 import { loginSchema } from "@/lib/zodSchemas/auth.schema";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/axios";
@@ -14,6 +15,7 @@ import api from "@/lib/axios";
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,13 +23,18 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(loginSchema) });
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+
     try {
       const res = await api.post("/auth/login", data);
+
       const { accessToken, user } = res.data.data;
+
       login(accessToken, user);
 
       if (!user.isEmailVerified) {
@@ -45,95 +52,138 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-stone-900">Selamat Datang</h1>
-          <p className="text-sm text-stone-500 mt-1">Login ke akun kamu</p>
-        </div>
+    <main className="min-h-screen bg-white">
+      <div className="mx-auto flex min-h-screen max-w-341.5 items-center justify-center px-6 py-16">
+        <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-[#e8e8e8] bg-white shadow-[0_2px_8px_rgba(26,26,26,0.08)] lg:grid-cols-2">
+          {/* LEFT PANEL */}
+          <div className="relative hidden overflow-hidden bg-[#f7f7f7] p-12 lg:flex lg:flex-col lg:justify-between">
+            {/* Chevron Decoration */}
+            <div className="absolute -left-10 top-0 h-40 w-20 skew-x-[-25deg] bg-[#024ad8]/30" />
 
-        {/* Card */}
-        <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
-                Email
-              </label>
-              <input
-                {...register("email")}
-                type="email"
-                placeholder="kamu@email.com"
-                className="w-full px-3 py-2 text-[15px] border border-stone-200 rounded-lg bg-white text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.email.message}
-                </p>
-              )}
+            <div className="relative z-10 max-w-sm">
+              <p className="mb-4 text-sm font-medium uppercase tracking-[1px] text-[#024ad8]">
+                BidSpace Platform
+              </p>
+
+              <h1 className="text-5xl font-medium leading-none text-[#1a1a1a]">
+                Welcome back.
+              </h1>
+
+              <p className="mt-6 text-base leading-relaxed text-[#3d3d3d]">
+                Manage auctions, monitor bids, and access your dashboard in one
+                unified workspace.
+              </p>
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  {...register("password")}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password kamu"
-                  className="w-full px-3 py-2 pr-10 text-[15px] border border-stone-200 rounded-lg bg-white text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+            <div className="relative z-10">
+              <div className="rounded-2xl border border-[#e8e8e8] bg-white p-6">
+                <p className="text-sm text-[#636363]">
+                  Secure authentication system with role-based access and email
+                  verification.
+                </p>
               </div>
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.password.message}
+            </div>
+          </div>
+
+          {/* RIGHT PANEL */}
+          <div className="flex items-center bg-white px-6 py-12 sm:px-10 lg:px-14">
+            <div className="w-full">
+              <div className="mb-10">
+                <h2 className="text-[32px] font-medium leading-none text-[#1a1a1a]">
+                  Login
+                </h2>
+
+                <p className="mt-3 text-base text-[#636363]">
+                  Enter your credentials to continue
                 </p>
-              )}
-            </div>
+              </div>
 
-            {/* Forgot Password */}
-            <div className="flex justify-end">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-amber-600 hover:text-amber-700 transition-colors"
-              >
-                Lupa password?
-              </Link>
-            </div>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* EMAIL */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[#1a1a1a]">
+                    Email
+                  </label>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-medium text-[15px] rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              {isLoading && <Loader2 size={16} className="animate-spin" />}
-              {isLoading ? "Login..." : "Login"}
-            </button>
-          </form>
+                  <input
+                    {...register("email")}
+                    type="email"
+                    placeholder="you@example.com"
+                    className="h-11 w-full rounded-lg border border-[#c2c2c2] bg-white px-4 text-[15px] text-[#1a1a1a] outline-none transition-colors focus:border-[#1a1a1a]"
+                  />
+
+                  {errors.email && (
+                    <p className="text-sm text-[#b3262b]">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* PASSWORD */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[#1a1a1a]">
+                    Password
+                  </label>
+
+                  <div className="relative">
+                    <input
+                      {...register("password")}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      className="h-11 w-full rounded-lg border border-[#c2c2c2] bg-white px-4 pr-11 text-[15px] text-[#1a1a1a] outline-none transition-colors focus:border-[#1a1a1a]"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#636363]"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+
+                  {errors.password && (
+                    <p className="text-sm text-[#b3262b]">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* FORGOT */}
+                <div className="flex justify-end">
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm font-medium text-[#024ad8]"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                {/* SUBMIT */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#024ad8] px-6 text-[14px] font-semibold uppercase tracking-[0.7px] text-white transition-colors disabled:bg-[#c2c2c2]"
+                >
+                  {isLoading && <Loader2 size={16} className="animate-spin" />}
+
+                  {isLoading ? "Signing In..." : "Sign In"}
+                </button>
+              </form>
+
+              {/* FOOTER */}
+              <div className="mt-10 border-t border-[#e8e8e8] pt-6">
+                <p className="text-sm text-[#636363]">
+                  Don’t have an account?{" "}
+                  <Link href="/register" className="font-medium text-[#024ad8]">
+                    Create account
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-stone-500 mt-4">
-          Belum punya akun?{" "}
-          <Link
-            href="/register"
-            className="text-amber-600 hover:text-amber-700 font-medium transition-colors"
-          >
-            Daftar sekarang
-          </Link>
-        </p>
       </div>
-    </div>
+    </main>
   );
 }

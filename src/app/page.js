@@ -1,26 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import Link from "next/link";
-import { Gavel, ArrowRight, ShieldCheck, Zap, Clock } from "lucide-react";
+
+import { Gavel, ArrowRight, ShieldCheck, Zap, Clock3 } from "lucide-react";
+
 import axios from "@/lib/axios";
+
 import AuctionCard from "@/components/common/AuctionCard";
 
 const FEATURES = [
   {
     icon: ShieldCheck,
-    title: "Aman & Terpercaya",
-    desc: "Setiap auction diverifikasi admin sebelum aktif. Dana di-hold otomatis selama proses lelang.",
+    title: "Aman & Terverifikasi",
+    desc: "Semua auction melewati proses verifikasi sebelum tayang untuk menjaga kualitas dan keamanan transaksi.",
   },
   {
     icon: Zap,
-    title: "Buy Now",
-    desc: "Tidak mau menunggu? Langsung beli dengan harga Buy Now yang dipasang seller.",
+    title: "Instant Buy",
+    desc: "Tidak ingin menunggu bidding selesai? Gunakan Buy Now dan selesaikan transaksi secara instan.",
   },
   {
-    icon: Clock,
-    title: "Auto-Extend",
-    desc: "Bid di detik terakhir? Waktu otomatis diperpanjang agar semua punya kesempatan yang adil.",
+    icon: Clock3,
+    title: "Fair Auto Extend",
+    desc: "Bid di detik terakhir akan memperpanjang waktu auction secara otomatis untuk menjaga fairness.",
   },
 ];
 
@@ -32,104 +36,428 @@ export default function HomePage() {
     const fetchFeatured = async () => {
       try {
         const res = await axios.get("/auctions", {
-          params: { status: "active", sort: "ending_soon", limit: 8 },
+          params: {
+            status: "active",
+            sort: "ending_soon",
+            limit: 8,
+          },
         });
+
         setAuctions(res.data.data.auctions);
       } catch {
-        // silent fail — landing page tetap tampil tanpa auction
+        // silent fail
       } finally {
         setLoading(false);
       }
     };
+
     fetchFeatured();
   }, []);
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      {/* Hero */}
-      <section className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center text-center gap-6">
-          <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-sm font-medium px-4 py-1.5 rounded-full border border-amber-200 dark:border-amber-800">
-            <Gavel className="w-4 h-4" />
-            Platform Lelang Online
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-stone-900 dark:text-stone-50 leading-tight max-w-2xl">
-            Temukan Barang Terbaik,
-            <br />
-            <span className="text-amber-500">Menangkan dengan Bid</span>
-          </h1>
-          <p className="text-stone-500 dark:text-stone-400 text-lg max-w-xl">
-            Ikuti lelang secara real-time, pantau bid kamu, dan dapatkan barang
-            impian dengan harga terbaik.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Link
-              href="/auctions"
-              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+    <div className="min-h-screen bg-[#f7f7f7]">
+      {/* HERO */}
+      <section className="border-b border-[#e8e8e8] bg-white">
+        <div
+          className="
+            mx-auto
+            max-w-[1366px]
+            px-4
+            py-14
+
+            sm:px-6
+            sm:py-20
+
+            lg:px-8
+            lg:py-24
+          "
+        >
+          <div
+            className="
+              grid
+              items-center
+              gap-14
+
+              lg:grid-cols-2
+            "
+          >
+            {/* LEFT */}
+            <div className="max-w-2xl">
+              {/* BADGE */}
+              <div
+                className="
+                  mb-6
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-full
+                  border
+                  border-[#d7e3ff]
+                  bg-[#edf3ff]
+                  px-4
+                  py-1.5
+                  text-sm
+                  font-medium
+                  text-[#024ad8]
+                "
+              >
+                <Gavel className="h-4 w-4" />
+                Trusted Online Auction Platform
+              </div>
+
+              {/* TITLE */}
+              <h1
+                className="
+                  text-[38px]
+                  font-semibold
+                  leading-[1.05]
+                  tracking-[-1.8px]
+                  text-[#1a1a1a]
+
+                  sm:text-[52px]
+
+                  lg:text-[68px]
+                "
+              >
+                Win Rare Items Through
+                <span className="block text-[#024ad8]">Real-Time Auctions</span>
+              </h1>
+
+              {/* DESC */}
+              <p
+                className="
+                  mt-6
+                  max-w-xl
+                  text-[16px]
+                  leading-7
+                  text-[#525252]
+
+                  sm:text-[18px]
+                "
+              >
+                Bid transparently, monitor auctions in real-time, and secure
+                high-value products with a competitive pricing system designed
+                for fairness.
+              </p>
+
+              {/* ACTION */}
+              <div
+                className="
+                  mt-8
+                  flex
+                  flex-col
+                  gap-3
+
+                  sm:flex-row
+                "
+              >
+                <Link
+                  href="/auctions"
+                  className="
+                    inline-flex
+                    h-12
+                    items-center
+                    justify-center
+                    gap-2
+                    rounded-[4px]
+                    bg-[#024ad8]
+                    px-7
+                    text-[14px]
+                    font-semibold
+                    uppercase
+                    tracking-[0.7px]
+                    text-white
+                    transition-opacity
+                    hover:opacity-90
+                  "
+                >
+                  Explore Auctions
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+
+                <Link
+                  href="/register"
+                  className="
+                    inline-flex
+                    h-12
+                    items-center
+                    justify-center
+                    rounded-[4px]
+                    border
+                    border-[#cfcfcf]
+                    bg-white
+                    px-7
+                    text-[14px]
+                    font-semibold
+                    uppercase
+                    tracking-[0.7px]
+                    text-[#1a1a1a]
+                    transition-colors
+                    hover:bg-[#f7f7f7]
+                  "
+                >
+                  Create Account
+                </Link>
+              </div>
+            </div>
+
+            {/* RIGHT */}
+            <div
+              className="
+                relative
+                overflow-hidden
+                rounded-[28px]
+                border
+                border-[#e8e8e8]
+                bg-white
+                p-5
+                shadow-[0_20px_60px_rgba(0,0,0,0.06)]
+              "
             >
-              Jelajahi Auction
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-medium px-6 py-3 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors"
-            >
-              Daftar Sekarang
-            </Link>
+              <div
+                className="
+                  absolute
+                  inset-0
+                  bg-[radial-gradient(circle_at_top_right,rgba(2,74,216,0.08),transparent_45%)]
+                "
+              />
+
+              <div className="relative">
+                <div
+                  className="
+                    mb-4
+                    flex
+                    items-center
+                    justify-between
+                  "
+                >
+                  <div>
+                    <p className="text-sm font-medium text-[#1a1a1a]">
+                      Live Auctions
+                    </p>
+
+                    <p className="mt-1 text-sm text-[#636363]">Ending soon</p>
+                  </div>
+
+                  <div
+                    className="
+                      rounded-full
+                      bg-[#edf3ff]
+                      px-3
+                      py-1
+                      text-xs
+                      font-semibold
+                      uppercase
+                      tracking-[0.6px]
+                      text-[#024ad8]
+                    "
+                  >
+                    Active
+                  </div>
+                </div>
+
+                {loading ? (
+                  <div
+                    className="
+                      grid
+                      grid-cols-1
+                      gap-4
+
+                      sm:grid-cols-2
+                    "
+                  >
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="
+                          overflow-hidden
+                          rounded-2xl
+                          border
+                          border-[#e8e8e8]
+                          bg-white
+                        "
+                      >
+                        <div className="aspect-[4/3] animate-pulse bg-[#efefef]" />
+
+                        <div className="space-y-3 p-4">
+                          <div className="h-3 w-20 animate-pulse rounded bg-[#efefef]" />
+
+                          <div className="h-4 w-full animate-pulse rounded bg-[#efefef]" />
+
+                          <div className="h-5 w-24 animate-pulse rounded bg-[#efefef]" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : auctions.length === 0 ? (
+                  <div
+                    className="
+                      flex
+                      flex-col
+                      items-center
+                      justify-center
+                      rounded-2xl
+                      border
+                      border-dashed
+                      border-[#d8d8d8]
+                      bg-[#fafafa]
+                      px-6
+                      py-20
+                      text-center
+                    "
+                  >
+                    <Gavel className="mb-4 h-10 w-10 text-[#b3b3b3]" />
+
+                    <p className="text-[15px] text-[#636363]">
+                      No active auctions available.
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    className="
+                      grid
+                      grid-cols-1
+                      gap-4
+
+                      sm:grid-cols-2
+                    "
+                  >
+                    {auctions.slice(0, 4).map((auction) => (
+                      <AuctionCard key={auction.id} auction={auction} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Auctions */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between mb-6">
+      {/* FEATURED */}
+      <section
+        className="
+          mx-auto
+          max-w-[1366px]
+          px-4
+          py-14
+
+          sm:px-6
+          sm:py-16
+
+          lg:px-8
+        "
+      >
+        {/* HEADER */}
+        <div
+          className="
+            mb-8
+            flex
+            flex-col
+            gap-4
+
+            sm:flex-row
+            sm:items-end
+            sm:justify-between
+          "
+        >
           <div>
-            <h2 className="text-xl font-bold text-stone-900 dark:text-stone-50">
-              Auction Aktif
+            <p
+              className="
+                text-sm
+                font-semibold
+                uppercase
+                tracking-[1px]
+                text-[#024ad8]
+              "
+            >
+              Marketplace
+            </p>
+
+            <h2
+              className="
+                mt-2
+                text-[28px]
+                font-semibold
+                tracking-[-1px]
+                text-[#1a1a1a]
+              "
+            >
+              Active Auctions
             </h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-              Segera berakhir — jangan sampai ketinggalan
+
+            <p className="mt-2 text-[15px] text-[#636363]">
+              Auctions currently receiving bids from users.
             </p>
           </div>
+
           <Link
             href="/auctions"
-            className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1 transition-colors"
+            className="
+              inline-flex
+              items-center
+              gap-2
+              text-[15px]
+              font-medium
+              text-[#024ad8]
+            "
           >
-            Lihat semua <ArrowRight className="w-4 h-4" />
+            View all auctions
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
+        {/* CONTENT */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div
+            className="
+              grid
+              grid-cols-1
+              gap-5
+
+              sm:grid-cols-2
+
+              lg:grid-cols-3
+
+              xl:grid-cols-4
+            "
+          >
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg overflow-hidden animate-pulse"
+                className="
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  border-[#e8e8e8]
+                  bg-white
+                "
               >
-                <div className="aspect-4/3 bg-stone-100 dark:bg-stone-800" />
-                <div className="p-3 space-y-2">
-                  <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded w-1/3" />
-                  <div className="h-4 bg-stone-100 dark:bg-stone-800 rounded w-full" />
-                  <div className="h-5 bg-stone-100 dark:bg-stone-800 rounded w-1/2" />
+                <div className="aspect-[4/3] animate-pulse bg-[#efefef]" />
+
+                <div className="space-y-3 p-4">
+                  <div className="h-3 w-20 animate-pulse rounded bg-[#efefef]" />
+
+                  <div className="h-4 w-full animate-pulse rounded bg-[#efefef]" />
+
+                  <div className="h-5 w-24 animate-pulse rounded bg-[#efefef]" />
                 </div>
               </div>
             ))}
           </div>
-        ) : auctions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Gavel className="w-12 h-12 text-stone-300 dark:text-stone-600 mb-3" />
-            <p className="text-stone-500 dark:text-stone-400">
-              Belum ada auction aktif saat ini.
-            </p>
-            <Link
-              href="/my-auctions/create"
-              className="mt-4 text-sm text-amber-600 hover:text-amber-700 font-medium"
-            >
-              Buat auction pertama →
-            </Link>
-          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div
+            className="
+              grid
+              grid-cols-1
+              gap-5
+
+              sm:grid-cols-2
+
+              lg:grid-cols-3
+
+              xl:grid-cols-4
+            "
+          >
             {auctions.map((auction) => (
               <AuctionCard key={auction.id} auction={auction} />
             ))}
@@ -137,25 +465,102 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Features */}
-      <section className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h2 className="text-xl font-bold text-stone-900 dark:text-stone-50 text-center mb-8">
-            Kenapa Pilih Platform Ini?
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {/* FEATURES */}
+      <section className="border-t border-[#e8e8e8] bg-white">
+        <div
+          className="
+            mx-auto
+            max-w-[1366px]
+            px-4
+            py-16
+
+            sm:px-6
+
+            lg:px-8
+          "
+        >
+          {/* HEADER */}
+          <div className="max-w-2xl">
+            <p
+              className="
+                text-sm
+                font-semibold
+                uppercase
+                tracking-[1px]
+                text-[#024ad8]
+              "
+            >
+              Why Choose Us
+            </p>
+
+            <h2
+              className="
+                mt-2
+                text-[32px]
+                font-semibold
+                tracking-[-1.2px]
+                text-[#1a1a1a]
+              "
+            >
+              Built For Transparent & Competitive Auctions
+            </h2>
+          </div>
+
+          {/* GRID */}
+          <div
+            className="
+              mt-10
+              grid
+              grid-cols-1
+              gap-5
+
+              md:grid-cols-3
+            "
+          >
             {FEATURES.map(({ icon: Icon, title, desc }) => (
               <div
                 key={title}
-                className="flex flex-col items-center text-center gap-3 p-6 rounded-lg border border-stone-200 dark:border-stone-800"
+                className="
+                    rounded-[24px]
+                    border
+                    border-[#e8e8e8]
+                    bg-[#fafafa]
+                    p-7
+                  "
               >
-                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                  <Icon className="w-5 h-5 text-amber-500" />
+                <div
+                  className="
+                      flex
+                      h-12
+                      w-12
+                      items-center
+                      justify-center
+                      rounded-2xl
+                      bg-[#edf3ff]
+                    "
+                >
+                  <Icon className="h-5 w-5 text-[#024ad8]" />
                 </div>
-                <h3 className="font-semibold text-stone-900 dark:text-stone-50">
+
+                <h3
+                  className="
+                      mt-5
+                      text-[20px]
+                      font-semibold
+                      text-[#1a1a1a]
+                    "
+                >
                   {title}
                 </h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed">
+
+                <p
+                  className="
+                      mt-3
+                      text-[15px]
+                      leading-7
+                      text-[#636363]
+                    "
+                >
                   {desc}
                 </p>
               </div>

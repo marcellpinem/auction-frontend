@@ -1,35 +1,64 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
+
 import { AuthProvider } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
 });
 
 export const metadata = {
-  title: "Auction Website",
-  description: "Platform lelang online",
+  title: "AuctionHub",
+  description: "Modern real-time online auction platform.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html
       lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`
+        ${inter.variable}
+        ${geistMono.variable}
+      `}
     >
-      <body className="min-h-full flex flex-col bg-stone-50 text-stone-900">
+      <body
+        className="
+          min-h-screen
+          bg-[#f7f7f7]
+          font-sans
+          text-[#1a1a1a]
+          antialiased
+        "
+      >
         <AuthProvider>
           <NotificationProvider>
-            {children}
-            <Toaster richColors position="top-right" />
+            <div className="flex min-h-screen flex-col">{children}</div>
+
+            <Toaster
+              position="top-right"
+              richColors
+              toastOptions={{
+                classNames: {
+                  toast:
+                    "!rounded-2xl !border !border-[#e8e8e8] !bg-white !shadow-[0_12px_32px_rgba(0,0,0,0.08)]",
+                  title: "!text-[14px] !font-semibold !text-[#1a1a1a]",
+                  description: "!text-[13px] !text-[#636363]",
+                },
+              }}
+            />
           </NotificationProvider>
         </AuthProvider>
       </body>

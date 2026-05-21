@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+import { useEffect, useState } from "react";
+
 import {
   Gavel,
-  Menu,
-  X,
   Bell,
   Wallet,
   User,
@@ -15,12 +15,14 @@ import {
   Package,
   Bookmark,
   ClipboardList,
+  Search,
+  X,
 } from "lucide-react";
+
 import { useAuth } from "@/context/AuthContext";
 import { useNotification } from "@/context/NotificationContext";
 import { toast } from "sonner";
-
-const NAV_LINKS = [{ label: "Browse Auction", href: "/auctions" }];
+import Image from "next/image";
 
 const AUTH_NAV = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -33,10 +35,20 @@ const AUTH_NAV = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const { isAuthenticated, user, logout } = useAuth();
+
   const { unreadCount, fetchUnreadCount } = useNotification();
-  const [mobileOpen, setMobileOpen] = useState(false);
+
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+
+  const isAuctionPage = pathname.startsWith("/auctions");
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -49,209 +61,446 @@ export default function Navbar() {
     toast.success("Berhasil logout.");
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+
+    const query = search.trim();
+
+    setMobileSearchOpen(false);
+
+    if (!query) {
+      router.push("/auctions");
+      return;
+    }
+
+    router.push(`/auctions?search=${encodeURIComponent(query)}`);
+  };
+
   return (
-    <header className="sticky top-0 z-50 bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-bold text-stone-800 dark:text-stone-100"
-          >
-            <Gavel className="w-5 h-5 text-amber-500" />
-            <span>AuctionHub</span>
-          </Link>
-
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`px-3 py-1.5 rounded-lg text-[15px] transition-colors ${
-                  pathname.startsWith(link.href)
-                    ? "bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100 font-medium"
-                    : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800/50"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <>
-                {/* Notifications */}
-                <Link
-                  href="/notifications"
-                  className="relative p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-                >
-                  <Bell className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 min-w-4 h-4 px-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
-                </Link>
-
-                {/* User menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setUserMenuOpen((v) => !v)}
-                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-                  >
-                    <div className="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs font-bold">
-                      {user?.username?.[0]?.toUpperCase() ?? "U"}
-                    </div>
-                  </button>
-
-                  {userMenuOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setUserMenuOpen(false)}
-                      />
-                      <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg shadow-sm z-20 py-1 overflow-hidden">
-                        <div className="px-3 py-2 border-b border-stone-100 dark:border-stone-800">
-                          <p className="text-sm font-medium text-stone-800 dark:text-stone-100">
-                            {user?.username}
-                          </p>
-                          <p className="text-xs text-stone-400 truncate">
-                            {user?.email}
-                          </p>
-                        </div>
-                        {AUTH_NAV.map((item) => (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 text-[15px] text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-                          >
-                            <item.icon className="w-4 h-4 text-stone-400" />
-                            {item.label}
-                          </Link>
-                        ))}
-                        <div className="border-t border-stone-100 dark:border-stone-800 mt-1 pt-1">
-                          <Link
-                            href="/profile"
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 text-[15px] text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-                          >
-                            <User className="w-4 h-4 text-stone-400" />
-                            Profile
-                          </Link>
-                          <button
-                            onClick={() => {
-                              setUserMenuOpen(false);
-                              handleLogout();
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-[15px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            Logout
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+    <>
+      <header className="sticky top-0 z-50 border-b border-[#e8e8e8] bg-white">
+        <div className="mx-auto max-w-[1366px] px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-4">
+            {/* LEFT */}
+            <div className="flex items-center gap-4 lg:gap-10">
+              {/* LOGO */}
+              <Link href="/" className="flex shrink-0 items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-[#024ad8]">
+                  <Gavel className="h-4 w-4 text-white" />
                 </div>
-              </>
-            ) : (
-              <div className="hidden md:flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="px-3 py-1.5 text-[15px] text-stone-600 dark:text-stone-300 hover:text-stone-800 dark:hover:text-stone-100 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-3 py-1.5 text-[15px] bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-medium"
-                >
-                  Daftar
-                </Link>
-              </div>
-            )}
 
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden p-2 rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-              onClick={() => setMobileOpen((v) => !v)}
-            >
-              {mobileOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
+                <span className="hidden text-[18px] font-medium text-[#1a1a1a] sm:block">
+                  AuctionHub
+                </span>
+              </Link>
+            </div>
+
+            {/* RIGHT */}
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              {/* DESKTOP SEARCH */}
+              {!isAuctionPage && (
+                <form onSubmit={handleSearch} className="hidden md:flex">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search auctions..."
+                      className="
+                        h-11
+                        w-[220px]
+                        rounded-[4px]
+                        border
+                        border-[#c2c2c2]
+                        bg-white
+                        px-4
+                        pr-11
+                        text-[15px]
+                        text-[#1a1a1a]
+                        outline-none
+                        transition-colors
+                        placeholder:text-[#636363]
+                        focus:border-[#1a1a1a]
+
+                        lg:w-[320px]
+                      "
+                    />
+
+                    <button
+                      type="submit"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#636363]"
+                    >
+                      <Search className="h-4 w-4" />
+                    </button>
+                  </div>
+                </form>
               )}
-            </button>
+
+              {/* MOBILE SEARCH */}
+              {!isAuctionPage && (
+                <button
+                  onClick={() => setMobileSearchOpen(true)}
+                  className="flex h-11 w-11
+                    items-center
+                    justify-center
+                    rounded-[4px]
+                    border border-transparent text-[#1a1a1a] transition-colors hover:border-[#e8e8e8] hover:bg-[#f7f7f7] md:hidden
+                  "
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+              )}
+
+              {isAuthenticated ? (
+                <>
+                  {/* NOTIFICATION */}
+                  <Link
+                    href="/notifications"
+                    className="
+                      relative
+                      flex
+                      h-11
+                      w-11
+                      items-center
+                      justify-center
+                      rounded-[4px]
+                      border
+                      border-transparent
+                      text-[#636363]
+                      transition-colors
+                      hover:border-[#e8e8e8]
+                      hover:bg-[#f7f7f7]
+                    "
+                  >
+                    <Bell className="h-5 w-5" />
+
+                    {unreadCount > 0 && (
+                      <span
+                        className="
+                          absolute
+                          right-2
+                          top-2
+                          flex
+                          h-4
+                          min-w-4
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-[#024ad8]
+                          px-1
+                          text-[10px]
+                          font-bold
+                          text-white
+                        "
+                      >
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* USER MENU */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setUserMenuOpen((v) => !v)}
+                      className="
+                        flex
+                        items-center
+                        gap-3
+                        rounded-[4px]
+                        border
+                        border-transparent
+                        p-1.5
+                        transition-colors
+                        hover:border-[#e8e8e8]
+                        hover:bg-[#f7f7f7]
+                      "
+                    >
+                      {/* <div
+                        className="
+                          flex
+                          h-8
+                          w-8
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-[#024ad8]
+                          text-xs
+                          font-semibold
+                          text-white
+                        "
+                      >
+                        {user?.username?.[0]?.toUpperCase() ?? "U"}
+                      </div> */}
+
+                      <div
+                        className="
+    flex
+    h-8
+    w-8
+    items-center
+    justify-center
+    overflow-hidden
+    rounded-full
+    bg-[#024ad8]
+    text-xs
+    font-semibold
+    text-white
+  "
+                      >
+                        {user?.avatar_url ? (
+                          <Image
+                            src={user.avatar_url}
+                            alt={user?.username ?? "User avatar"}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          (user?.username?.[0]?.toUpperCase() ?? "U")
+                        )}
+                      </div>
+
+                      {/* DESKTOP USER INFO */}
+                      <div className="hidden text-left xl:block">
+                        <p className="text-sm font-medium text-[#1a1a1a]">
+                          {user?.username}
+                        </p>
+
+                        <p className="max-w-[140px] truncate text-xs text-[#636363]">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </button>
+
+                    {userMenuOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setUserMenuOpen(false)}
+                        />
+
+                        <div
+                          className="
+                            absolute
+                            right-0
+                            top-full
+                            z-20
+                            mt-2
+                            w-64
+                            overflow-hidden
+                            rounded-2xl
+                            border
+                            border-[#e8e8e8]
+                            bg-white
+                            shadow-[0_8px_24px_rgba(26,26,26,0.12)]
+                          "
+                        >
+                          {/* HEADER */}
+                          <div className="border-b border-[#e8e8e8] p-4">
+                            <p className="text-sm font-medium text-[#1a1a1a]">
+                              {user?.username}
+                            </p>
+
+                            <p className="mt-1 text-xs text-[#636363]">
+                              {user?.email}
+                            </p>
+                          </div>
+
+                          {/* NAVIGATION */}
+                          <div className="p-2">
+                            {AUTH_NAV.map((item) => (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setUserMenuOpen(false)}
+                                className={`
+                                  flex
+                                  items-center
+                                  gap-3
+                                  rounded-lg
+                                  px-3
+                                  py-2.5
+                                  text-[15px]
+                                  transition-colors
+
+                                  ${
+                                    pathname.startsWith(item.href)
+                                      ? "bg-[#f7f7f7] text-[#1a1a1a]"
+                                      : "text-[#3d3d3d] hover:bg-[#f7f7f7]"
+                                  }
+                                `}
+                              >
+                                <item.icon className="h-4 w-4 text-[#636363]" />
+
+                                {item.label}
+                              </Link>
+                            ))}
+                          </div>
+
+                          {/* FOOTER */}
+                          <div className="border-t border-[#e8e8e8] p-2">
+                            <Link
+                              href="/profile"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="
+                                flex
+                                items-center
+                                gap-3
+                                rounded-lg
+                                px-3
+                                py-2.5
+                                text-[15px]
+                                text-[#3d3d3d]
+                                transition-colors
+                                hover:bg-[#f7f7f7]
+                              "
+                            >
+                              <User className="h-4 w-4 text-[#636363]" />
+                              Profile
+                            </Link>
+
+                            <button
+                              onClick={() => {
+                                setUserMenuOpen(false);
+                                handleLogout();
+                              }}
+                              className="
+                                flex
+                                w-full
+                                items-center
+                                gap-3
+                                rounded-lg
+                                px-3
+                                py-2.5
+                                text-left
+                                text-[15px]
+                                text-[#b3262b]
+                                transition-colors
+                                hover:bg-[#fff5f5]
+                              "
+                            >
+                              <LogOut className="h-4 w-4" />
+                              Logout
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {/* LOGIN */}
+                  <Link
+                    href="/login"
+                    className="
+                      hidden
+                      px-4
+                      py-2
+                      text-[15px]
+                      font-medium
+                      text-[#1a1a1a]
+
+                      sm:block
+                    "
+                  >
+                    Login
+                  </Link>
+
+                  {/* REGISTER */}
+                  <Link
+                    href="/register"
+                    className="
+                      flex
+                      h-11
+                      items-center
+                      rounded-[4px]
+                      bg-[#024ad8]
+                      px-4
+                      text-[13px]
+                      font-semibold
+                      uppercase
+                      tracking-[0.7px]
+                      text-white
+
+                      sm:px-6
+                      sm:text-[14px]
+                    "
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-4 py-3 space-y-1">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className={`block px-3 py-2 rounded-lg text-[15px] transition-colors ${
-                pathname.startsWith(link.href)
-                  ? "bg-stone-100 dark:bg-stone-800 font-medium text-stone-800 dark:text-stone-100"
-                  : "text-stone-600 dark:text-stone-300"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-          {!isAuthenticated && (
-            <div className="flex gap-2 pt-2 border-t border-stone-100 dark:border-stone-800">
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="flex-1 text-center px-3 py-2 text-[15px] border border-stone-200 dark:border-stone-700 rounded-lg text-stone-600 dark:text-stone-300"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setMobileOpen(false)}
-                className="flex-1 text-center px-3 py-2 text-[15px] bg-amber-500 text-white rounded-lg font-medium"
-              >
-                Daftar
-              </Link>
-            </div>
-          )}
-          {isAuthenticated && (
-            <div className="pt-2 border-t border-stone-100 dark:border-stone-800 space-y-1">
-              {AUTH_NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[15px] text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-                >
-                  <item.icon className="w-4 h-4 text-stone-400" />
-                  {item.label}
-                </Link>
-              ))}
+      {/* MOBILE SEARCH OVERLAY */}
+      {mobileSearchOpen && !isAuctionPage && (
+        <div
+          className="
+            fixed
+            inset-0
+            z-[60]
+            bg-white
+
+            md:hidden
+          "
+        >
+          <div className="border-b border-[#e8e8e8] px-4 py-3">
+            <div className="flex items-center gap-3">
+              <form onSubmit={handleSearch} className="flex-1">
+                <div className="relative">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search auctions..."
+                    className="
+                      h-11
+                      w-full
+                      rounded-[4px]
+                      border
+                      border-[#c2c2c2]
+                      bg-white
+                      px-4
+                      pr-11
+                      text-[15px]
+                      text-[#1a1a1a]
+                      outline-none
+                      placeholder:text-[#636363]
+                      focus:border-[#1a1a1a]
+                    "
+                  />
+
+                  <button
+                    type="submit"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#636363]"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+
               <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  handleLogout();
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[15px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                onClick={() => setMobileSearchOpen(false)}
+                className="
+                  flex
+                  h-11
+                  w-11
+                  items-center
+                  justify-center
+                  rounded-[4px]
+                  border
+                  border-[#e8e8e8]
+                "
               >
-                <LogOut className="w-4 h-4" />
-                Logout
+                <X className="h-5 w-5 text-[#1a1a1a]" />
               </button>
             </div>
-          )}
+          </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
